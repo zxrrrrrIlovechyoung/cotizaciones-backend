@@ -4,42 +4,37 @@ import (
 	"log"
 
 	"cotizaciones-api/internal/config"
-	"cotizaciones-api/internal/database"
-	"cotizaciones-api/internal/handlers"
-	"cotizaciones-api/internal/middleware"
-	"cotizaciones-api/internal/repository"
-
-	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/cors"
+	"cotizaciones-api/internal/infrastructure/httpserver"
+	"cotizaciones-api/internal/infrastructure/httpserver/handlers"
+	"cotizaciones-api/internal/infrastructure/postgres"
+	"cotizaciones-api/internal/infrastructure/security"
+	"cotizaciones-api/internal/usecase"
 )
 
+// main es el "composition root": el único punto del programa donde se
+// conocen todas las implementaciones concretas (Postgres, JWT, bcrypt, Fiber)
+// y se inyectan unas dentro de otras. El resto del código solo conoce interfaces.
 func main() {
 	cfg := config.Load()
 
-	pool, err := database.NewPool(cfg)
+	pool, err := postgres.NewPool(cfg)
 	if err != nil {
 		log.Fatalf("error al conectar a la base de datos: %v", err)
 	}
 	defer pool.Close()
 
-	userRepo := repository.NewUserRepository(pool)
-	authHandler := handlers.NewAuthHandler(cfg, userRepo)
+	userRepo := postgres.NewUserRepository(pool)
+	hasher := security.NewBcryptHasher()
+	tokens := security.NewJWTGenerator(cfg.JWTSecret, cfg.JWTExpirationHours)
 
-	app := fiber.New()
+	authUseCase := usecase.NewAuthUseCase(userRepo, hasher, tokens)
+	authHandler := handlers.NewAuthHandler(authUseCase)
 
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: []string{cfg.CORSOrigins},
-		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	}))
-
-	app.Get("/api/health", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"status": "ok"})
+	app := httpserver.NewRouter(httpserver.RouterDeps{
+		AuthHandler: authHandler,
+		JWTSecret:   cfg.JWTSecret,
+		CORSOrigin:  cfg.CORSOrigins,
 	})
-
-	api := app.Group("/api")
-	api.Post("/auth/login", authHandler.Login)
-	api.Get("/auth/me", authHandler.Me, middleware.Protected(cfg.JWTSecret))
 
 	log.Printf("servidor escuchando en el puerto %s (%s)", cfg.AppPort, cfg.AppEnv)
 	if err := app.Listen(":" + cfg.AppPort); err != nil {

@@ -3,7 +3,7 @@ package middleware
 import (
 	"strings"
 
-	"cotizaciones-api/internal/auth"
+	"cotizaciones-api/internal/infrastructure/security"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -18,7 +18,7 @@ func Protected(secret string) fiber.Handler {
 		}
 
 		tokenString := strings.TrimPrefix(header, "Bearer ")
-		claims, err := auth.ParseToken(secret, tokenString)
+		claims, err := security.ParseToken(secret, tokenString)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "token inválido o expirado",
