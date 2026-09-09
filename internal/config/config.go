@@ -35,9 +35,15 @@ func Load() *Config {
 		expHours = 24
 	}
 
+	appEnv := getEnv("APP_ENV", "development")
+	jwtSecret := getEnv("JWT_SECRET", "changeme")
+	if appEnv == "production" && jwtSecret == "changeme" {
+		log.Fatal("JWT_SECRET no puede quedar en el valor por defecto cuando APP_ENV=production")
+	}
+
 	return &Config{
 		AppPort: getEnv("APP_PORT", "3000"),
-		AppEnv:  getEnv("APP_ENV", "development"),
+		AppEnv:  appEnv,
 
 		DBHost:     getEnv("DB_HOST", "localhost"),
 		DBPort:     getEnv("DB_PORT", "5432"),
@@ -46,7 +52,7 @@ func Load() *Config {
 		DBName:     getEnv("DB_NAME", "cotizaciones_db"),
 		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
 
-		JWTSecret:          getEnv("JWT_SECRET", "changeme"),
+		JWTSecret:          jwtSecret,
 		JWTExpirationHours: expHours,
 
 		CORSOrigins: getEnv("CORS_ORIGINS", "http://localhost:5173"),

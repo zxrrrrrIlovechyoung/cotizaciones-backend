@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"errors"
+	"regexp"
+	"strings"
 	"time"
 
 	"cotizaciones-api/internal/domain"
@@ -9,6 +11,10 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 )
+
+// emailRegex es una validación de formato deliberadamente laxa: solo descarta
+// entradas obviamente inválidas. La verdad sobre si el email existe la tiene la BD.
+var emailRegex = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
 
 type AuthHandler struct {
 	authUseCase *usecase.AuthUseCase
@@ -45,9 +51,16 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 		})
 	}
 
-	if req.Email == "" || req.Password == "" {
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+
+	if !emailRegex.MatchString(req.Email) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "email y password son obligatorios",
+			"error": "el email no tiene un formato válido",
+		})
+	}
+	if len(req.Password) < 6 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "la contraseña debe tener al menos 6 caracteres",
 		})
 	}
 
@@ -75,11 +88,24 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 }
 
 func (h *AuthHandler) Me(c fiber.Ctx) error {
-	email, _ := c.Locals("email").(string)
 	userID, _ := c.Locals("user_id").(int64)
 
-	return c.JSON(fiber.Map{
-		"user_id": userID,
-		"email":   email,
+	user, err := h.authUseCase.Profile(c.Context(), userID)
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "el usuario ya no existe",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "error interno",
+		})
+	}
+
+	return c.JSON(userResponse{
+		ID:        user.ID,
+		Nombre:    user.Nombre,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 	})
 }

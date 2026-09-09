@@ -44,3 +44,10 @@ func (uc *AuthUseCase) Login(ctx context.Context, email, password string) (*Logi
 
 	return &LoginResult{Token: token, User: user}, nil
 }
+
+// Profile devuelve el usuario actual a partir de su ID (el que viene en el token ya
+// validado). Consulta la BD para reflejar el estado real: si el usuario fue borrado,
+// el token deja de servir aunque todavía no haya expirado.
+func (uc *AuthUseCase) Profile(ctx context.Context, userID int64) (*domain.User, error) {
+	return uc.userRepo.FindByID(ctx, userID)
+}
