@@ -56,7 +56,7 @@ func toClienteResponse(c domain.Cliente) clienteResponse {
 func (h *ClienteHandler) List(c fiber.Ctx) error {
 	clientes, err := h.uc.List(c.Context())
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error interno"})
+		return internalError(c, "listar clientes", err)
 	}
 
 	res := make([]clienteResponse, 0, len(clientes))
@@ -90,7 +90,7 @@ func (h *ClienteHandler) Create(c fiber.Ctx) error {
 		if errors.Is(err, domain.ErrClienteInvalido) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "datos de cliente inválidos"})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error interno"})
+		return internalError(c, "crear cliente", err)
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(toClienteResponse(*creado))
@@ -106,7 +106,7 @@ func (h *ClienteHandler) Delete(c fiber.Ctx) error {
 		if errors.Is(err, domain.ErrClienteNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "cliente no encontrado"})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "error interno"})
+		return internalError(c, "eliminar cliente", err)
 	}
 
 	return c.SendStatus(fiber.StatusNoContent)

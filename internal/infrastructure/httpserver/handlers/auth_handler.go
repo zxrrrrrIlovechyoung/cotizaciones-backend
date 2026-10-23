@@ -71,9 +71,7 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 				"error": "credenciales inválidas",
 			})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error interno",
-		})
+		return internalError(c, "login", err)
 	}
 
 	return c.JSON(loginResponse{
@@ -97,9 +95,7 @@ func (h *AuthHandler) Me(c fiber.Ctx) error {
 				"error": "el usuario ya no existe",
 			})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error interno",
-		})
+		return internalError(c, "perfil", err)
 	}
 
 	return c.JSON(userResponse{
