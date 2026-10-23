@@ -7,4 +7,7 @@ import "errors"
 var (
 	ErrUserNotFound       = errors.New("usuario no encontrado")
 	ErrInvalidCredentials = errors.New("credenciales inválidas")
+
+	ErrClienteNotFound = errors.New("cliente no encontrado")
+	ErrClienteInvalido = errors.New("datos de cliente inválidos")
 )

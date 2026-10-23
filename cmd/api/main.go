@@ -24,16 +24,21 @@ func main() {
 	defer pool.Close()
 
 	userRepo := postgres.NewUserRepository(pool)
+	clienteRepo := postgres.NewClienteRepository(pool)
 	hasher := security.NewBcryptHasher()
 	tokens := security.NewJWTGenerator(cfg.JWTSecret, cfg.JWTExpirationHours)
 
 	authUseCase := usecase.NewAuthUseCase(userRepo, hasher, tokens)
 	authHandler := handlers.NewAuthHandler(authUseCase)
 
+	clienteUseCase := usecase.NewClienteUseCase(clienteRepo)
+	clienteHandler := handlers.NewClienteHandler(clienteUseCase)
+
 	app := httpserver.NewRouter(httpserver.RouterDeps{
-		AuthHandler: authHandler,
-		JWTSecret:   cfg.JWTSecret,
-		CORSOrigin:  cfg.CORSOrigins,
+		AuthHandler:    authHandler,
+		ClienteHandler: clienteHandler,
+		JWTSecret:      cfg.JWTSecret,
+		CORSOrigin:     cfg.CORSOrigins,
 	})
 
 	log.Printf("servidor escuchando en el puerto %s (%s)", cfg.AppPort, cfg.AppEnv)
