@@ -6,6 +6,7 @@ package usecase
 
 type PasswordHasher interface {
 	Compare(hash, password string) error
+	Hash(password string) (string, error)
 }
 
 type TokenGenerator interface {

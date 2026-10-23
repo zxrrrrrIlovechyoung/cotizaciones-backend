@@ -85,6 +85,33 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 	})
 }
 
+type cambiarPasswordRequest struct {
+	Actual string `json:"actual"`
+	Nueva  string `json:"nueva"`
+}
+
+func (h *AuthHandler) ChangePassword(c fiber.Ctx) error {
+	var req cambiarPasswordRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cuerpo de la solicitud inválido"})
+	}
+	if len(req.Nueva) < 6 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "la nueva contraseña debe tener al menos 6 caracteres"})
+	}
+
+	userID, _ := c.Locals("user_id").(int64)
+	if err := h.authUseCase.ChangePassword(c.Context(), userID, req.Actual, req.Nueva); err != nil {
+		if errors.Is(err, domain.ErrContrasenaActualIncorrecta) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "la contraseña actual es incorrecta"})
+		}
+		if errors.Is(err, domain.ErrUserNotFound) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "el usuario ya no existe"})
+		}
+		return internalError(c, "cambiar contraseña", err)
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
 func (h *AuthHandler) Me(c fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(int64)
 

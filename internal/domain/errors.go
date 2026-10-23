@@ -5,8 +5,9 @@ import "errors"
 // Errores de negocio. Cualquier capa externa (handlers, usecase) los reconoce
 // con errors.Is, sin acoplarse a errores específicos de pgx o de Fiber.
 var (
-	ErrUserNotFound       = errors.New("usuario no encontrado")
-	ErrInvalidCredentials = errors.New("credenciales inválidas")
+	ErrUserNotFound               = errors.New("usuario no encontrado")
+	ErrInvalidCredentials         = errors.New("credenciales inválidas")
+	ErrContrasenaActualIncorrecta = errors.New("la contraseña actual es incorrecta")
 
 	ErrClienteNotFound = errors.New("cliente no encontrado")
 	ErrClienteInvalido = errors.New("datos de cliente inválidos")

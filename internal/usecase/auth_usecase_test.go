@@ -25,9 +25,15 @@ func (f fakeUserRepo) FindByID(_ context.Context, _ int64) (*domain.User, error)
 	return f.user, f.err
 }
 
+func (f fakeUserRepo) UpdatePassword(_ context.Context, _ int64, _ string) error {
+	return f.err
+}
+
 type fakeHasher struct{ err error }
 
 func (f fakeHasher) Compare(_, _ string) error { return f.err }
+
+func (f fakeHasher) Hash(password string) (string, error) { return "hash-de:" + password, nil }
 
 type fakeTokens struct {
 	token string
@@ -68,5 +74,25 @@ func TestLogin_PasswordIncorrecta_DevuelveCredencialesInvalidas(t *testing.T) {
 	_, err := uc.Login(context.Background(), "a@b.com", "mala")
 	if !errors.Is(err, domain.ErrInvalidCredentials) {
 		t.Fatalf("se esperaba ErrInvalidCredentials, se obtuvo: %v", err)
+	}
+}
+
+func TestChangePassword_OK(t *testing.T) {
+	repo := fakeUserRepo{user: &domain.User{ID: 1, PasswordHash: "hash-viejo"}}
+	uc := usecase.NewAuthUseCase(repo, fakeHasher{}, fakeTokens{})
+
+	// Hasher sin error => la contraseña actual coincide => se actualiza sin error.
+	if err := uc.ChangePassword(context.Background(), 1, "actual", "nuevaSegura"); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+}
+
+func TestChangePassword_ActualIncorrecta(t *testing.T) {
+	repo := fakeUserRepo{user: &domain.User{ID: 1, PasswordHash: "hash-viejo"}}
+	uc := usecase.NewAuthUseCase(repo, fakeHasher{err: errors.New("mismatch")}, fakeTokens{})
+
+	err := uc.ChangePassword(context.Background(), 1, "mala", "nuevaSegura")
+	if !errors.Is(err, domain.ErrContrasenaActualIncorrecta) {
+		t.Fatalf("se esperaba ErrContrasenaActualIncorrecta, se obtuvo: %v", err)
 	}
 }

@@ -51,3 +51,21 @@ func (uc *AuthUseCase) Login(ctx context.Context, email, password string) (*Logi
 func (uc *AuthUseCase) Profile(ctx context.Context, userID int64) (*domain.User, error) {
 	return uc.userRepo.FindByID(ctx, userID)
 }
+
+// ChangePassword cambia la contraseña del usuario: primero verifica que la
+// contraseña actual sea correcta, luego guarda el hash de la nueva. Nunca se
+// guarda la contraseña en texto plano.
+func (uc *AuthUseCase) ChangePassword(ctx context.Context, userID int64, actual, nueva string) error {
+	user, err := uc.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if err := uc.hasher.Compare(user.PasswordHash, actual); err != nil {
+		return domain.ErrContrasenaActualIncorrecta
+	}
+	nuevoHash, err := uc.hasher.Hash(nueva)
+	if err != nil {
+		return err
+	}
+	return uc.userRepo.UpdatePassword(ctx, userID, nuevoHash)
+}

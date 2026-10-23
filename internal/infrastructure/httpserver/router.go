@@ -49,6 +49,7 @@ func NewRouter(deps RouterDeps) *fiber.App {
 	api := app.Group("/api")
 	api.Post("/auth/login", loginLimiter, deps.AuthHandler.Login)
 	api.Get("/auth/me", middleware.Protected(deps.JWTSecret), deps.AuthHandler.Me)
+	api.Put("/auth/password", middleware.Protected(deps.JWTSecret), deps.AuthHandler.ChangePassword)
 
 	// Clientes y Cotizaciones: todo requiere sesión iniciada (token válido).
 	protected := middleware.Protected(deps.JWTSecret)

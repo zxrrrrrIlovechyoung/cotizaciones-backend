@@ -37,6 +37,17 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*domain
 	return &u, nil
 }
 
+func (r *UserRepository) UpdatePassword(ctx context.Context, id int64, passwordHash string) error {
+	tag, err := r.db.Exec(ctx, `UPDATE users SET password_hash = $1 WHERE id = $2`, passwordHash, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrUserNotFound
+	}
+	return nil
+}
+
 func (r *UserRepository) FindByID(ctx context.Context, id int64) (*domain.User, error) {
 	var u domain.User
 	row := r.db.QueryRow(ctx,
