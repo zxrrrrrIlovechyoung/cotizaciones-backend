@@ -34,11 +34,16 @@ func main() {
 	clienteUseCase := usecase.NewClienteUseCase(clienteRepo)
 	clienteHandler := handlers.NewClienteHandler(clienteUseCase)
 
+	cotizacionRepo := postgres.NewCotizacionRepository(pool)
+	cotizacionUseCase := usecase.NewCotizacionUseCase(cotizacionRepo, userRepo)
+	cotizacionHandler := handlers.NewCotizacionHandler(cotizacionUseCase)
+
 	app := httpserver.NewRouter(httpserver.RouterDeps{
-		AuthHandler:    authHandler,
-		ClienteHandler: clienteHandler,
-		JWTSecret:      cfg.JWTSecret,
-		CORSOrigin:     cfg.CORSOrigins,
+		AuthHandler:       authHandler,
+		ClienteHandler:    clienteHandler,
+		CotizacionHandler: cotizacionHandler,
+		JWTSecret:         cfg.JWTSecret,
+		CORSOrigin:        cfg.CORSOrigins,
 	})
 
 	log.Printf("servidor escuchando en el puerto %s (%s)", cfg.AppPort, cfg.AppEnv)

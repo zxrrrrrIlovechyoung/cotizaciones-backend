@@ -12,10 +12,11 @@ import (
 )
 
 type RouterDeps struct {
-	AuthHandler    *handlers.AuthHandler
-	ClienteHandler *handlers.ClienteHandler
-	JWTSecret      string
-	CORSOrigin     string
+	AuthHandler       *handlers.AuthHandler
+	ClienteHandler    *handlers.ClienteHandler
+	CotizacionHandler *handlers.CotizacionHandler
+	JWTSecret         string
+	CORSOrigin        string
 }
 
 // NewRouter arma el árbol de rutas de Fiber. Es el único lugar que sabe
@@ -49,11 +50,15 @@ func NewRouter(deps RouterDeps) *fiber.App {
 	api.Post("/auth/login", loginLimiter, deps.AuthHandler.Login)
 	api.Get("/auth/me", middleware.Protected(deps.JWTSecret), deps.AuthHandler.Me)
 
-	// Clientes: todo el módulo requiere sesión iniciada (token válido).
+	// Clientes y Cotizaciones: todo requiere sesión iniciada (token válido).
 	protected := middleware.Protected(deps.JWTSecret)
 	api.Get("/clientes", protected, deps.ClienteHandler.List)
 	api.Post("/clientes", protected, deps.ClienteHandler.Create)
 	api.Delete("/clientes/:id", protected, deps.ClienteHandler.Delete)
+
+	api.Get("/cotizaciones", protected, deps.CotizacionHandler.List)
+	api.Post("/cotizaciones", protected, deps.CotizacionHandler.Create)
+	api.Delete("/cotizaciones/:id", protected, deps.CotizacionHandler.Delete)
 
 	return app
 }

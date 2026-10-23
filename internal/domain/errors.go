@@ -10,4 +10,7 @@ var (
 
 	ErrClienteNotFound = errors.New("cliente no encontrado")
 	ErrClienteInvalido = errors.New("datos de cliente inválidos")
+
+	ErrCotizacionNotFound = errors.New("cotización no encontrada")
+	ErrCotizacionInvalida = errors.New("datos de cotización inválidos")
 )
