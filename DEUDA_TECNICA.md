@@ -106,4 +106,73 @@ y eliminar. Implica agregar la operación de actualización de punta a punta.
 
 ---
 
+## 5. Reforzar la validación de campos en Cotizaciones
+
+**Estado:** Pendiente
+**Módulo:** Cotizaciones
+
+**Descripción:** El formulario ya valida por pasos en el frontend, pero el backend
+valida poco (solo que haya nombre y al menos una partida). Hay que reforzar la
+validación del lado del servidor para no confiar únicamente en la pantalla
+(cantidades/precios mayores a cero, formato de correo, campos obligatorios, etc.).
+
+**Dónde se tocaría:**
+- `cotizaciones-frontend/src/components/cotizaciones/FormularioCotizacion.tsx` —
+  funciones `validarPaso0` (línea 69), `validarPaso1` (línea 82) y `validarPaso2`
+  (línea 97); revisar que cubran todos los campos obligatorios.
+- `cotizaciones-backend/internal/infrastructure/httpserver/handlers/cotizacion_handler.go`
+  — método `Create`: validar la entrada antes de guardar.
+- `cotizaciones-backend/internal/usecase/cotizacion_usecase.go` — reglas de negocio
+  (ej. precio de venta no menor al de compra, cantidades positivas).
+
+---
+
+## 6. Implementar la función de "Imprimir / PDF"
+
+**Estado:** Pendiente
+**Módulo:** Cotizaciones (detalle)
+
+**Descripción:** En el detalle de una cotización existe el botón **Imprimir / PDF**,
+pero todavía no hace nada (no tiene evento). Falta generar el documento imprimible
+o el PDF de la cotización.
+
+**Dónde se tocaría:**
+- `cotizaciones-frontend/src/views/CotizacionesView.tsx` — línea 74, el botón
+  `.topbar__print`: agregarle el evento `onClick` que dispare la impresión / PDF.
+- Definir cómo se genera el PDF (en el frontend con una librería, o en el backend
+  con un endpoint que arme el documento).
+
+---
+
+## 7. Implementar el botón de "Editar" de una cotización
+
+**Estado:** Pendiente
+**Módulo:** Cotizaciones (requiere backend + frontend)
+
+**Descripción:** En el detalle existe el botón **Editar**, pero no tiene función.
+Falta permitir modificar una cotización ya creada (recalculando totales).
+
+**Dónde se tocaría:**
+
+*Backend (nuevo endpoint `PUT /api/cotizaciones/:id`):*
+- `cotizaciones-backend/internal/domain/cotizacion_repository.go` — agregar `Update`.
+- `cotizaciones-backend/internal/infrastructure/postgres/cotizacion_repository.go` —
+  implementar `Update` (actualizar cabecera y reemplazar partidas).
+- `cotizaciones-backend/internal/usecase/cotizacion_usecase.go` — método `Update`
+  (recalcular totales).
+- `cotizaciones-backend/internal/infrastructure/httpserver/handlers/cotizacion_handler.go`
+  y `.../router.go` — handler y ruta.
+
+*Frontend:*
+- `cotizaciones-frontend/src/views/CotizacionesView.tsx` — línea 78, el botón
+  `.topbar__edit`: agregar el evento que abra el formulario en modo "editar".
+- `cotizaciones-frontend/src/components/cotizaciones/FormularioCotizacion.tsx` —
+  reutilizar el formulario para precargar y actualizar una cotización existente.
+- `cotizaciones-frontend/src/services/cotizaciones.ts` — agregar `actualizarCotizacion(id, datos)`.
+
+> Nota: los puntos 6 y 7 implican tocar UI, así que requieren aprobación explícita
+> antes de aplicarse.
+
+---
+
 _Última actualización: 2026-10-23_
