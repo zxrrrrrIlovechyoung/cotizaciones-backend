@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cotizaciones-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cotizaciones_user
+      POSTGRES_PASSWORD: cotizaciones_pass
+      POSTGRES_DB: cotizaciones_db
+    ports:
+      # El 5432 del host ya lo usa el PostgreSQL local de este equipo,
+      # así que exponemos el contenedor en el 5433. Dentro del contenedor
+      # Postgres sigue escuchando en el 5432.
+      - "5433:5432"
+    volumes:
+      - cotizaciones_pgdata:/var/lib/postgresql/data
+      # Los .sql de esta carpeta se ejecutan SOLO la primera vez que el
+      # volumen está vacío (primer arranque), en orden alfabético.
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cotizaciones_user -d cotizaciones_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  cotizaciones_pgdata:
