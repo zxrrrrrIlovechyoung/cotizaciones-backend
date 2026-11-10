@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"cotizaciones-api/internal/domain"
 	"strings"
 
 	"cotizaciones-api/internal/infrastructure/security"
@@ -26,6 +27,7 @@ func Protected(secret string) fiber.Handler {
 		}
 
 		c.Locals("user_id", claims.UserID)
+		c.SetContext(domain.WithOwner(c.Context(), claims.UserID))
 		c.Locals("email", claims.Email)
 
 		return c.Next()

@@ -6,6 +6,6 @@ import "context"
 // depende de esta interfaz, nunca de pgx.
 type ClienteRepository interface {
 	List(ctx context.Context) ([]Cliente, error)
+	Cotizaciones(ctx context.Context, id int64) (HistorialCliente, error)
 	Create(ctx context.Context, c *Cliente) (*Cliente, error)
-	Delete(ctx context.Context, id int64) error
 }

@@ -4,6 +4,9 @@ import "time"
 
 // Partida es un renglón (producto o servicio) de una cotización.
 type Partida struct {
+	OrigenID                 int64
+	Imagenes                 [2][]byte
+	TieneImagen              [2]bool
 	ID                       int64
 	NumeroPartida            int
 	Descripcion              string
@@ -35,6 +38,8 @@ type Cotizacion struct {
 	NombreAsesor       string
 	Moneda             string
 	VigenciaHasta      *time.Time
+	DiasParaVencer     *int
+	ProximaAVencer     bool
 	CorreoContacto     string
 	TelefonoContacto   string
 	PreciosIncluyenIva bool
@@ -56,6 +61,8 @@ type Cotizacion struct {
 // PartidaNueva y CotizacionNueva son la entrada de creación: lo que captura el
 // formulario. El backend calcula folio, totales, asesor, etc. a partir de esto.
 type PartidaNueva struct {
+	OrigenID                 int64
+	Imagenes                 [2][]byte
 	SKU                      string
 	Descripcion              string
 	EspecificacionesTecnicas string

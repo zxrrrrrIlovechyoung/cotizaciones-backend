@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
+  <title>Cotización {{.Cotizacion.Folio}}</title>
+  <style>
+    @page { size: letter; margin: 14mm; }
+    * { box-sizing: border-box; }
+    body {
+      --acento: {{.Acento}};
+      --texto-franja: {{.TextoFranja}};
+      --texto-acento: {{.TextoAcento}};
+      --acento-suave: color-mix(in srgb, var(--acento) 9%, white);
+      --borde-acento: color-mix(in srgb, var(--acento) 22%, white);
+      margin: 0; background: #fff; color: #192d48; font: 12px {{.Fuente}};
+      overflow-wrap: anywhere; print-color-adjust: exact; -webkit-print-color-adjust: exact;
+    }
+    header { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,30%); align-items: start; gap: 18px; border-bottom: 3px solid var(--acento); padding-bottom: 14px; }
+    header > div, .emisor-datos, .campo { min-width: 0; }
+    .emisor { display: flex; align-items: flex-start; gap: 12px; }
+    .emisor img { display: block; width: min(100px,30%); max-height: 58px; object-fit: contain; object-position: left top; flex: none; }
+    .emisor-datos h3 { margin-bottom: 4px; }
+    .una-linea { display: block; min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    h1 { font-size: 24px; margin: 0 0 6px; }
+    h2 { margin: 0; padding: 4px 10px; font-size: 12px; line-height: 1.2; background: var(--acento); color: var(--texto-franja); text-align: center; break-after: avoid; }
+    h3 { font-size: 12px; margin: 0 0 8px; }
+    p { margin: 4px 0; line-height: 1.4; }
+    .folio { text-align: right; }
+    .folio strong { font-size: 14px; }
+    .muted, small, .campo span { color: #556780; }
+    section { margin-top: 16px; }
+    .datos { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px 12px; border-top: 1px solid var(--borde-acento); padding-top: 8px; }
+    .campo span, small { display: block; font-size: 10px; margin-bottom: 3px; }
+    .texto { white-space: pre-wrap; }
+    table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 10px; }
+    thead { display: table-header-group; }
+    th, td { border: 1px solid var(--borde-acento); text-align: left; padding: 5px; vertical-align: top; }
+    th { background: var(--acento-suave); color: var(--texto-acento); }
+    tr, .final, header, .datos { break-inside: avoid; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .fotos { display: flex; gap: 3px; flex-wrap: wrap; }
+    .fotos img { width: min(47%,50px); aspect-ratio: 1; object-fit: contain; border: 1px solid var(--borde-acento); }
+    .final { position: fixed; left: 0; right: 0; bottom: 0; height: 50mm; margin: 0; padding-top: 12px; border-top: 1px solid var(--borde-acento); display: grid; grid-template-columns: minmax(0,1fr) minmax(0,.85fr); align-content: start; gap: 14px; }
+    .final h3 { color: var(--texto-acento); }
+    .totales { align-self: start; border: 1px solid var(--borde-acento); }
+    .totales div { display: flex; justify-content: space-between; gap: 8px; padding: 7px; border-bottom: 1px solid var(--borde-acento); }
+    .totales strong { text-align: right; }
+    .gran-total { background: var(--acento-suave); font-size: 13px; }
+    .reserva-pie { display: table-footer-group; }
+    .reserva-pie td { height: 54mm; border: 0; padding: 0; background: #fff; }
+  </style>
+</head>
+<body>
+  {{$c := .Cotizacion}}{{$emisor := .Emisor}}
+  <section class="final">
+    <div>
+      {{if $c.MetodosPago}}<h3>Métodos de pago</h3><p class="texto">{{$c.MetodosPago}}</p>{{end}}
+      {{if $c.NotasComerciales}}<h3>Notas adicionales</h3><p class="texto">{{$c.NotasComerciales}}</p>{{end}}
+    </div>
+    <div class="totales">
+      <div><span>Subtotal</span><strong>{{monto $c.Subtotal $c.Moneda}}</strong></div>
+      <div>{{if $c.PreciosIncluyenIva}}<span>IVA incluido</span><strong>Incluido en el precio</strong>{{else}}
+        <span>IVA ({{$c.PorcentajeIva}}%)</span><strong>{{monto $c.Impuestos $c.Moneda}}</strong>{{end}}</div>
+      <div class="gran-total"><span>Total</span><strong>{{monto $c.Total $c.Moneda}}</strong></div>
+    </div>
+  </section>
+  <main>
+    <header>
+      <div class="emisor">
+        <img src="{{logo $emisor.Logo}}" alt="Logo de la cotización">
+        <div class="emisor-datos">
+          <h3 class="una-linea">{{abreviar $emisor.Comercial 53}}</h3>
+          {{if $emisor.RazonSocial}}<p class="una-linea">Razón social: {{abreviar $emisor.RazonSocial 38}}</p>{{end}}
+          {{if $emisor.RFC}}<p class="muted">RFC: {{$emisor.RFC}}</p>{{end}}
+          {{if $emisor.Direccion}}<p class="muted una-linea">Dirección: {{abreviar $emisor.Direccion 40}}</p>{{end}}
+          {{if $emisor.Telefono}}<p class="muted">Teléfono: {{$emisor.Telefono}}</p>{{end}}
+        </div>
+      </div>
+      <div class="folio"><h1>Cotización</h1><strong>Folio {{$c.Folio}}</strong><p>{{fecha .FechaCreacion}}</p></div>
+    </header>
+    <section><h2>Datos del cliente</h2><div class="datos">
+      <div class="campo"><span>Empresa / Nombre</span><strong class="una-linea">{{abreviar $c.NombreComercial 31}}</strong></div>
+      {{if $c.AtencionA}}<div class="campo"><span>Atención a</span><strong class="una-linea">{{abreviar $c.AtencionA 31}}</strong></div>{{end}}
+      {{if $c.RFC}}<div class="campo"><span>RFC</span><strong>{{$c.RFC}}</strong></div>{{end}}
+      {{if $c.TelefonoContacto}}<div class="campo"><span>Teléfono</span><strong>{{$c.TelefonoContacto}}</strong></div>{{end}}
+      {{if $c.CorreoContacto}}<div class="campo"><span>Correo</span><strong>{{$c.CorreoContacto}}</strong></div>{{end}}
+    </div></section>
+    <section><h2>Datos de la cotización</h2><div class="datos">
+      {{if $c.NombreAsesor}}<div class="campo"><span>Cotizador</span><strong>{{$c.NombreAsesor}}</strong></div>{{end}}
+      <div class="campo"><span>Vigencia</span><strong>{{fecha $c.VigenciaHasta}}</strong></div>
+      <div class="campo"><span>Moneda</span><strong>{{$c.Moneda}}</strong></div>
+      {{if $c.TiempoEntrega}}<div class="campo"><span>Plazo de entrega</span><strong>{{$c.TiempoEntrega}}</strong></div>{{end}}
+      {{if $c.CondicionesPago}}<div class="campo"><span>Condiciones de pago</span><strong>{{$c.CondicionesPago}}</strong></div>{{end}}
+      {{if ne $c.PorcentajeAnticipo nil}}<div class="campo"><span>Anticipo</span><strong>{{$c.PorcentajeAnticipo}}%</strong></div>{{end}}
+    </div></section>
+    <section><h2>Productos y servicios</h2><table>
+      <colgroup><col style="width:10%"><col style="width:17%"><col style="width:32%"><col style="width:7%"><col style="width:15%"><col style="width:19%"></colgroup>
+      <thead><tr><th>Cantidad</th><th>Imágenes</th><th>Descripción</th><th>Und.</th><th>Precio unitario</th><th>Importe</th></tr></thead>
+      <tbody>{{range $c.Partidas}}
+        <tr>
+          <td>{{.Cantidad}}</td>
+          <td><div class="fotos">{{range .Imagenes}}{{with imagen .}}<img src="{{.}}" alt="Producto">{{end}}{{end}}</div></td>
+          <td>{{if .SKU}}<small>SKU: {{.SKU}}</small>{{end}}<strong>{{if .Descripcion}}{{.Descripcion}}{{else}}Producto o servicio{{end}}</strong>
+            {{if .EspecificacionesTecnicas}}<small class="texto">{{.EspecificacionesTecnicas}}</small>{{end}}</td>
+          <td>{{.Unidad}}</td>
+          <td class="num">{{monto .PrecioUnitarioVenta $c.Moneda}}{{if .PorcentajeDescuento}}<small>Desc. {{.PorcentajeDescuento}}%</small>{{end}}</td>
+          <td class="num"><strong>{{monto .Importe $c.Moneda}}</strong></td>
+        </tr>
+      {{end}}</tbody>
+      <tfoot class="reserva-pie"><tr><td colspan="6"></td></tr></tfoot>
+    </table></section>
+  </main>
+</body>
+</html>

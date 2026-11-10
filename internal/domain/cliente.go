@@ -14,3 +14,18 @@ type Cliente struct {
 	AtencionA        string
 	CreatedAt        time.Time
 }
+
+type CotizacionCliente struct {
+	ID            int64
+	Folio         string
+	FechaCreacion time.Time
+	Moneda        string
+	Total         float64
+	Archivada     bool
+}
+
+type HistorialCliente struct {
+	FechaAlta        time.Time
+	Cotizaciones     []CotizacionCliente
+	FoliosEliminados []string
+}

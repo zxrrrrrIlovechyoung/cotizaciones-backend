@@ -8,10 +8,13 @@ var (
 	ErrUserNotFound               = errors.New("usuario no encontrado")
 	ErrInvalidCredentials         = errors.New("credenciales inválidas")
 	ErrContrasenaActualIncorrecta = errors.New("la contraseña actual es incorrecta")
+	ErrContrasenaInvalida         = errors.New("Usa de 8 a 20 caracteres, con mayúscula, minúscula, número y carácter especial. Máximo 72 bytes")
+	ErrContrasenaSinCambios       = errors.New("La nueva contraseña debe ser distinta de la actual")
 
 	ErrClienteNotFound = errors.New("cliente no encontrado")
 	ErrClienteInvalido = errors.New("datos de cliente inválidos")
 
-	ErrCotizacionNotFound = errors.New("cotización no encontrada")
-	ErrCotizacionInvalida = errors.New("datos de cotización inválidos")
+	ErrCotizacionNotFound  = errors.New("cotización no encontrada")
+	ErrCotizacionInvalida  = errors.New("datos de cotización inválidos")
+	ErrCotizacionArchivada = errors.New("La cotización está archivada y disponible solo para consulta.")
 )

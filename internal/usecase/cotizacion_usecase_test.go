@@ -32,6 +32,13 @@ func (f *fakeCotizacionRepo) Create(_ context.Context, c *domain.Cotizacion) (*d
 }
 
 func (f *fakeCotizacionRepo) SoftDelete(_ context.Context, _ int64) error { return f.err }
+func (f *fakeCotizacionRepo) Archive(_ context.Context, _ int64) error    { return f.err }
+func (f *fakeCotizacionRepo) Update(ctx context.Context, c *domain.Cotizacion) (*domain.Cotizacion, error) {
+	return f.Create(ctx, c)
+}
+func (f *fakeCotizacionRepo) ImagenPartida(_ context.Context, _ int64, _ int) ([]byte, error) {
+	return nil, f.err
+}
 
 // aprox compara flotantes con una tolerancia pequeña (evita falsos negativos por
 // la aritmética de punto flotante).

@@ -21,6 +21,10 @@ func (uc *ClienteUseCase) List(ctx context.Context) ([]domain.Cliente, error) {
 	return uc.repo.List(ctx)
 }
 
+func (uc *ClienteUseCase) Cotizaciones(ctx context.Context, id int64) (domain.HistorialCliente, error) {
+	return uc.repo.Cotizaciones(ctx, id)
+}
+
 func (uc *ClienteUseCase) Create(ctx context.Context, c *domain.Cliente) (*domain.Cliente, error) {
 	// Normalización/validación mínima de negocio. El nombre es lo único
 	// obligatorio; el resto son datos de contacto opcionales.
@@ -32,8 +36,4 @@ func (uc *ClienteUseCase) Create(ctx context.Context, c *domain.Cliente) (*domai
 		c.TipoCliente = "Empresa"
 	}
 	return uc.repo.Create(ctx, c)
-}
-
-func (uc *ClienteUseCase) Delete(ctx context.Context, id int64) error {
-	return uc.repo.Delete(ctx, id)
 }

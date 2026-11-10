@@ -22,6 +22,11 @@ type LoginResult struct {
 	User  *domain.User
 }
 
+func (uc *AuthUseCase) EmailAvailable(ctx context.Context, email string) (bool, error) {
+	exists, err := uc.userRepo.EmailExists(ctx, email)
+	return !exists, err
+}
+
 // Login orquesta el caso de uso: busca el usuario, valida la contraseña y
 // genera el token. No sabe si el usuario viene de Postgres ni si el token es JWT.
 func (uc *AuthUseCase) Login(ctx context.Context, email, password string) (*LoginResult, error) {
@@ -52,20 +57,39 @@ func (uc *AuthUseCase) Profile(ctx context.Context, userID int64) (*domain.User,
 	return uc.userRepo.FindByID(ctx, userID)
 }
 
+func (uc *AuthUseCase) VerificarContrasenaActual(ctx context.Context, userID int64, actual string) error {
+	_, err := uc.usuarioConContrasenaActual(ctx, userID, actual)
+	return err
+}
+
+func (uc *AuthUseCase) usuarioConContrasenaActual(ctx context.Context, userID int64, actual string) (*domain.User, error) {
+	user, err := uc.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if err := uc.hasher.Compare(user.PasswordHash, actual); err != nil {
+		return nil, domain.ErrContrasenaActualIncorrecta
+	}
+	return user, nil
+}
+
 // ChangePassword cambia la contraseña del usuario: primero verifica que la
 // contraseña actual sea correcta, luego guarda el hash de la nueva. Nunca se
 // guarda la contraseña en texto plano.
 func (uc *AuthUseCase) ChangePassword(ctx context.Context, userID int64, actual, nueva string) error {
-	user, err := uc.userRepo.FindByID(ctx, userID)
+	if err := domain.ValidarContrasena(nueva); err != nil {
+		return err
+	}
+	user, err := uc.usuarioConContrasenaActual(ctx, userID, actual)
 	if err != nil {
 		return err
 	}
-	if err := uc.hasher.Compare(user.PasswordHash, actual); err != nil {
-		return domain.ErrContrasenaActualIncorrecta
+	if actual == nueva || uc.hasher.Compare(user.PasswordHash, nueva) == nil {
+		return domain.ErrContrasenaSinCambios
 	}
 	nuevoHash, err := uc.hasher.Hash(nueva)
 	if err != nil {
 		return err
 	}
-	return uc.userRepo.UpdatePassword(ctx, userID, nuevoHash)
+	return uc.userRepo.UpdatePassword(ctx, userID, user.PasswordHash, nuevoHash)
 }

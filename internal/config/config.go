@@ -22,7 +22,9 @@ type Config struct {
 	JWTSecret          string
 	JWTExpirationHours int
 
-	CORSOrigins string
+	CORSOrigins                                                    string
+	SMTPHost, SMTPPort, SMTPFrom, SMTPUser, SMTPPassword, SMTPMode string
+	PDFChromiumPath                                                string
 }
 
 func Load() *Config {
@@ -37,7 +39,7 @@ func Load() *Config {
 
 	appEnv := getEnv("APP_ENV", "development")
 	jwtSecret := getEnv("JWT_SECRET", "changeme")
-	if appEnv == "production" && jwtSecret == "changeme" {
+	if appEnv == "production" && (len(jwtSecret) < 32 || jwtSecret == "cambia-este-valor-por-uno-seguro-en-produccion") {
 		log.Fatal("JWT_SECRET no puede quedar en el valor por defecto cuando APP_ENV=production")
 	}
 
@@ -55,7 +57,14 @@ func Load() *Config {
 		JWTSecret:          jwtSecret,
 		JWTExpirationHours: expHours,
 
-		CORSOrigins: getEnv("CORS_ORIGINS", "http://localhost:5173"),
+		CORSOrigins:     getEnv("CORS_ORIGINS", "http://localhost:5173"),
+		PDFChromiumPath: getEnv("PDF_CHROMIUM_PATH", ""),
+		SMTPHost:        getEnv("SMTP_HOST", ""),
+		SMTPPort:        getEnv("SMTP_PORT", "587"),
+		SMTPFrom:        getEnv("SMTP_FROM", ""),
+		SMTPUser:        getEnv("SMTP_USER", ""),
+		SMTPPassword:    getEnv("SMTP_PASSWORD", ""),
+		SMTPMode:        getEnv("SMTP_MODE", "starttls"),
 	}
 }
 

@@ -22,6 +22,12 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 	return &UserRepository{db: db}
 }
 
+func (r *UserRepository) EmailExists(ctx context.Context, email string) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM registro_emails WHERE email = $1)`, email).Scan(&exists)
+	return exists, err
+}
+
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var u domain.User
 	row := r.db.QueryRow(ctx,
@@ -37,13 +43,13 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*domain
 	return &u, nil
 }
 
-func (r *UserRepository) UpdatePassword(ctx context.Context, id int64, passwordHash string) error {
-	tag, err := r.db.Exec(ctx, `UPDATE users SET password_hash = $1 WHERE id = $2`, passwordHash, id)
+func (r *UserRepository) UpdatePassword(ctx context.Context, id int64, hashAnterior, hashNuevo string) error {
+	tag, err := r.db.Exec(ctx, `UPDATE users SET password_hash = $1 WHERE id = $2 AND password_hash = $3`, hashNuevo, id, hashAnterior)
 	if err != nil {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return domain.ErrUserNotFound
+		return domain.ErrContrasenaActualIncorrecta
 	}
 	return nil
 }

@@ -27,6 +27,14 @@ func (uc *CotizacionUseCase) List(ctx context.Context) ([]domain.Cotizacion, err
 // (misma regla que el frontend), asigna estado/versión y el asesor (nombre del
 // usuario logueado). El folio lo asigna el repositorio dentro de la transacción.
 func (uc *CotizacionUseCase) Create(ctx context.Context, asesorUserID int64, n domain.CotizacionNueva) (*domain.Cotizacion, error) {
+	return uc.save(ctx, asesorUserID, n, 0)
+}
+
+func (uc *CotizacionUseCase) Update(ctx context.Context, asesorUserID int64, id int64, n domain.CotizacionNueva) (*domain.Cotizacion, error) {
+	return uc.save(ctx, asesorUserID, n, id)
+}
+
+func (uc *CotizacionUseCase) save(ctx context.Context, asesorUserID int64, n domain.CotizacionNueva, id int64) (*domain.Cotizacion, error) {
 	if strings.TrimSpace(n.NombreComercial) == "" || len(n.Partidas) == 0 {
 		return nil, domain.ErrCotizacionInvalida
 	}
@@ -76,6 +84,9 @@ func (uc *CotizacionUseCase) Create(ctx context.Context, asesorUserID int64, n d
 		c.Total += base + impuesto
 
 		c.Partidas = append(c.Partidas, domain.Partida{
+			OrigenID:                 p.OrigenID,
+			Imagenes:                 p.Imagenes,
+			TieneImagen:              [2]bool{len(p.Imagenes[0]) > 0, len(p.Imagenes[1]) > 0},
 			NumeroPartida:            i + 1,
 			Descripcion:              p.Descripcion,
 			EspecificacionesTecnicas: p.EspecificacionesTecnicas,
@@ -92,11 +103,23 @@ func (uc *CotizacionUseCase) Create(ctx context.Context, asesorUserID int64, n d
 	}
 	c.UtilidadEstimada = c.Subtotal - c.Costo
 
+	if id > 0 {
+		c.ID = id
+		return uc.repo.Update(ctx, c)
+	}
 	return uc.repo.Create(ctx, c)
 }
 
 func (uc *CotizacionUseCase) Delete(ctx context.Context, id int64) error {
 	return uc.repo.SoftDelete(ctx, id)
+}
+
+func (uc *CotizacionUseCase) Archive(ctx context.Context, id int64) error {
+	return uc.repo.Archive(ctx, id)
+}
+
+func (uc *CotizacionUseCase) ImagenPartida(ctx context.Context, partidaID int64, slot int) ([]byte, error) {
+	return uc.repo.ImagenPartida(ctx, partidaID, slot)
 }
 
 func valorODefecto(v, def string) string {

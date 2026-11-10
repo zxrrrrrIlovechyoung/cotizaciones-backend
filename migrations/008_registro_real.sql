@@ -1,0 +1,11 @@
+ALTER TABLE perfiles_cuenta ADD COLUMN logo bytea CHECK (octet_length(logo)<=2097152);
+ALTER TABLE perfiles_cuenta ADD COLUMN logo_tipo varchar(20) NOT NULL DEFAULT '';
+CREATE UNIQUE INDEX users_email_normalizado_unique ON users(lower(btrim(email)));
+ALTER TABLE clientes ADD COLUMN owner_id bigint REFERENCES users(id);
+ALTER TABLE cotizaciones ADD COLUMN owner_id bigint REFERENCES users(id);
+UPDATE clientes SET owner_id=(SELECT id FROM users ORDER BY id LIMIT 1);
+UPDATE cotizaciones SET owner_id=(SELECT id FROM users ORDER BY id LIMIT 1);
+ALTER TABLE clientes ALTER COLUMN owner_id SET NOT NULL;
+ALTER TABLE cotizaciones ALTER COLUMN owner_id SET NOT NULL;
+CREATE INDEX clientes_owner_idx ON clientes(owner_id);
+CREATE INDEX cotizaciones_owner_idx ON cotizaciones(owner_id);

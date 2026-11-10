@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 
 	"cotizaciones-api/internal/domain"
 	"cotizaciones-api/internal/usecase"
@@ -23,13 +24,14 @@ func NewClienteHandler(uc *usecase.ClienteUseCase) *ClienteHandler {
 // (idCliente, nombreComercial, ...), para que la pantalla consuma la API sin
 // transformar nada.
 type clienteResponse struct {
-	IDCliente        int64  `json:"idCliente"`
-	NombreComercial  string `json:"nombreComercial"`
-	TipoCliente      string `json:"tipoCliente"`
-	RFC              string `json:"rfc"`
-	CorreoContacto   string `json:"correoContacto"`
-	TelefonoContacto string `json:"telefonoContacto"`
-	AtencionA        string `json:"atencionA"`
+	FechaAlta        time.Time `json:"fechaAlta"`
+	IDCliente        int64     `json:"idCliente"`
+	NombreComercial  string    `json:"nombreComercial"`
+	TipoCliente      string    `json:"tipoCliente"`
+	RFC              string    `json:"rfc"`
+	CorreoContacto   string    `json:"correoContacto"`
+	TelefonoContacto string    `json:"telefonoContacto"`
+	AtencionA        string    `json:"atencionA"`
 }
 
 type clienteRequest struct {
@@ -44,6 +46,7 @@ type clienteRequest struct {
 func toClienteResponse(c domain.Cliente) clienteResponse {
 	return clienteResponse{
 		IDCliente:        c.ID,
+		FechaAlta:        c.CreatedAt,
 		NombreComercial:  c.NombreComercial,
 		TipoCliente:      c.TipoCliente,
 		RFC:              c.RFC,
@@ -64,6 +67,35 @@ func (h *ClienteHandler) List(c fiber.Ctx) error {
 		res = append(res, toClienteResponse(cl))
 	}
 	return c.JSON(res)
+}
+
+func (h *ClienteHandler) Cotizaciones(c fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Id de cliente inválido"})
+	}
+	historial, err := h.uc.Cotizaciones(c.Context(), id)
+	if errors.Is(err, domain.ErrClienteNotFound) {
+		return c.SendStatus(fiber.StatusNotFound)
+	}
+	if err != nil {
+		return internalError(c, "consultar cotizaciones del cliente", err)
+	}
+	type resumen struct {
+		ID            int64     `json:"id"`
+		Folio         string    `json:"folio"`
+		FechaCreacion time.Time `json:"fechaCreacion"`
+		Moneda        string    `json:"moneda"`
+		Total         float64   `json:"total"`
+		Archivada     bool      `json:"archivada"`
+	}
+	res := make([]resumen, 0, len(historial.Cotizaciones))
+	for _, cotizacion := range historial.Cotizaciones {
+		res = append(res, resumen(cotizacion))
+	}
+	return c.JSON(fiber.Map{
+		"fechaAlta": historial.FechaAlta, "cotizaciones": res, "foliosEliminados": historial.FoliosEliminados,
+	})
 }
 
 func (h *ClienteHandler) Create(c fiber.Ctx) error {
@@ -94,20 +126,4 @@ func (h *ClienteHandler) Create(c fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(toClienteResponse(*creado))
-}
-
-func (h *ClienteHandler) Delete(c fiber.Ctx) error {
-	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "id inválido"})
-	}
-
-	if err := h.uc.Delete(c.Context(), id); err != nil {
-		if errors.Is(err, domain.ErrClienteNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "cliente no encontrado"})
-		}
-		return internalError(c, "eliminar cliente", err)
-	}
-
-	return c.SendStatus(fiber.StatusNoContent)
 }
